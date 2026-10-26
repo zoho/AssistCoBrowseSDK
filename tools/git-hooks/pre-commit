@@ -1,0 +1,30 @@
+#!/bin/bash
+# Refuse commits that would publish the CoBrowse widget code or local config.
+fail() { echo "pre-commit: $1" >&2; echo "pre-commit: commit refused. Unstage it, or bypass with --no-verify if this is a false alarm." >&2; exit 1; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# local.properties is machine-specific; it must never be tracked.
+echo "$staged" | grep -qE '(^|/)local\.properties$' && fail "local.properties is staged."
+
+# This hook's own patterns would match themselves, so its file is not scanned.
+added=$(git diff --cached -U0 --diff-filter=ACMR -- . ':(exclude)tools/git-hooks/' | grep '^+' | grep -v '^+++')
+
+# A real widget code assigned in source. The committed value must stay "".
+printf '%s' "$added" | grep -qE '[wW]idget[cC]ode[^=]*=[[:space:]]*"[^"]{6,}"' \
+    && fail "a widget code is being committed. Keep CobrowseController.widgetCode = \"\" in BankApplication.kt."
+
+# Widget codes are zkms-prefixed tokens.
+printf '%s' "$added" | grep -qE 'zkms[a-f0-9]{16,}' && fail "a zkms… widget-code token is being committed."
+
+# Private, per-clone list of strings that must never be committed (one per line,
+# # for comments). It lives in .git/info, so it is never pushed.
+list="$(git rev-parse --git-dir)/info/blocked-strings"
+if [ -f "$list" ]; then
+    while IFS= read -r s; do
+        case "$s" in ''|'#'*) continue ;; esac
+        printf '%s' "$added" | grep -qiF -- "$s" && fail "a string from .git/info/blocked-strings is being committed."
+    done < "$list"
+fi
+
+exit 0

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Status-bar icon polarity for the Activity window theme: the window draws
+      behind a transparent status bar, so icons must go dark on the light
+      surface. values-night flips it.
+    -->
+    <bool name="light_status_bar">true</bool>
+</resources>

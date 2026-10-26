@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark-theme counterparts of values/colors.xml, matching BankDarkColors in BankTheme.kt. -->
+<resources>
+
+    <color name="md_primary">#B8C4FF</color>
+    <color name="md_on_primary">#002F68</color>
+    <color name="md_primary_container">#004491</color>
+    <color name="md_on_primary_container">#DDE1FF</color>
+    <color name="md_secondary_container">#424658</color>
+    <color name="md_on_secondary_container">#DEE1F8</color>
+    <color name="md_surface">#121319</color>
+    <color name="md_on_surface">#E1E2EA</color>
+    <color name="md_surface_container">#1E1F25</color>
+    <color name="md_surface_container_low">#1A1B21</color>
+    <color name="md_surface_container_high">#292A2F</color>
+    <color name="md_on_surface_variant">#C3C5D8</color>
+    <color name="md_outline_variant">#434655</color>
+    <color name="md_error">#FFB4A5</color>
+
+    <color name="masked_field_bg">#33B8C4FF</color>
+
+    <color name="colorPrimary">#B8C4FF</color>
+    <color name="colorPrimaryDark">#001A42</color>
+    <color name="colorAccent">#F6B3D5</color>
+
+    <color name="hint_color">#9A9AA2</color>
+    <color name="textcolor">#C3C5D8</color>
+
+</resources>

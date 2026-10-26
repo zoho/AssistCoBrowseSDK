@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Light-theme colours for the XML/View side, mirroring the Compose fallback
+  scheme in BankTheme.kt so the Activity window and Compose screens match.
+  Dark tones live in values-night/colors.xml.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <color name="md_primary">#1F5BB7</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#DDE1FF</color>
+    <color name="md_on_primary_container">#001A42</color>
+    <color name="md_secondary_container">#DEE1F8</color>
+    <color name="md_on_secondary_container">#171B2B</color>
+    <color name="md_surface">#F8F9FF</color>
+    <color name="md_on_surface">#1A1B21</color>
+    <color name="md_surface_container">#ECEDF5</color>
+    <color name="md_surface_container_low">#F2F3FB</color>
+    <color name="md_surface_container_high">#E7E8EF</color>
+    <color name="md_on_surface_variant">#434655</color>
+    <color name="md_outline_variant">#C3C5D8</color>
+    <color name="md_error">#AA3529</color>
+
+    <color name="masked_field_bg">#1F1F5BB7</color>
+
+    <color name="colorPrimary">#1F5BB7</color>
+    <color name="colorPrimaryDark">#004491</color>
+    <color name="colorAccent">#864C6B</color>
+
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="hint_color">#808080</color>
+
+    <color name="stars_color">#FFCC33</color>
+    <color name="stars_color_unselected">#ACACAC</color>
+
+    <color name="textcolor" tools:ignore="MissingDefaultResource">#676767</color>
+
+</resources>

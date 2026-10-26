@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TLS trust configuration, a testing aid for TLS-inspecting networks (corporate
+  proxy, VPN). There the join call fails with "Trust anchor for certification
+  path not found", because the proxy's CA sits in the user store, which apps
+  ignore since API 24.
+
+  `debug-overrides` applies only to debuggable builds, so release APKs keep the
+  system-CAs-only default. To use it, install the proxy's root CA on the device
+  and run a debug build. It is not a fix for release apps behind such a proxy.
+-->
+<network-security-config>
+
+    <!--
+      Every build: system CAs only, restating the platform default.
+      `cleartextTrafficPermitted` is left unset so the platform default applies.
+    -->
+    <base-config>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+      Debuggable builds only: also trust user-installed CAs. Keep `system`
+      listed: debug-overrides replaces the trust anchors rather than adding to them.
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+
+</network-security-config>

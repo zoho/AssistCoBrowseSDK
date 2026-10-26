@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon background: the brand-blue tile. Flat fill here so the drawable
+  is valid on every API level; `drawable-v24/` carries the gradient version the
+  adaptive icon (v26+) actually resolves to.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#1F5BB7"
+        android:pathData="M0,0 H108 V108 H0 Z" />
+</vector>

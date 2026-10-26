@@ -1,0 +1,6 @@
+# Copy to local.properties and fill in. local.properties is gitignored.
+#
+#   cp local.properties.sample local.properties
+#
+# Android SDK location (Android Studio writes this for you on first sync).
+sdk.dir=/Users/YOU/Library/Android/sdk

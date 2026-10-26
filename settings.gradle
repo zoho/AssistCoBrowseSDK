@@ -1,0 +1,30 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+
+        maven {
+            url = "https://maven.zohodl.com/"
+        }
+    }
+}
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+
+        // Zoho's Maven host: serves com.zoho.assist artifacts. Not on Maven Central.
+        maven { url = "https://maven.zohodl.com/" }
+    }
+}
+
+rootProject.name = 'AssistCoBrowseSDK'
+
+include ':app'

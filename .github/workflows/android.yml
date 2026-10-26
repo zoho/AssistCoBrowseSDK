@@ -1,0 +1,77 @@
+name: Android
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch supersedes a run still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Same rules as tools/git-hooks/pre-commit, applied to every tracked file, so a
+  # commit made without the hook (or with --no-verify) is still caught. The repo
+  # is public: a widget code that reaches it is already published.
+  credentials:
+    name: Credential check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan tracked files
+        run: |
+          status=0
+          if git ls-files | grep -qE '(^|/)local\.properties$'; then
+            echo "::error::local.properties is tracked. It is machine-specific and holds credentials."
+            status=1
+          fi
+          # The hook's own patterns would match themselves, so its folder is not scanned.
+          if git ls-files -z -- . ':(exclude)tools/git-hooks/' | xargs -0 grep -nIE \
+              '[wW]idget[cC]ode[^=]*=[[:space:]]*"[^"]{6,}"|zkms[a-f0-9]{16,}'; then
+            echo "::error::A widget code is committed. Keep CobrowseController.widgetCode = \"\" in BankApplication.kt."
+            status=1
+          fi
+          exit $status
+
+  build:
+    name: Build and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The committed widget code and domain are empty, so the APK builds and
+      # runs, and Start reports "Widget code not set".
+      # Never feed a real widget code in from a secret: anyone who downloads the
+      # APK could extract it.
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Lint
+        run: ./gradlew :app:lintDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.*
+          retention-days: 14
