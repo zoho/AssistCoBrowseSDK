@@ -35,7 +35,7 @@ and the dependency in your app module's `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.zoho.assist:cobrowse:1.0.0'
+    implementation 'com.zoho.assist:cobrowse:1.0.1'
 }
 ```
 
@@ -54,7 +54,7 @@ the SDK declares. Keep yours at or above those versions; lowering one fails at r
 | Gradle | 9.7.1 (wrapper is committed) |
 | Kotlin | 2.4.20 |
 | Java | 17 |
-| CoBrowse SDK | `com.zoho.assist:cobrowse:1.0.0` from `https://maven.zohodl.com/` |
+| CoBrowse SDK | `com.zoho.assist:cobrowse:1.0.1` from `https://maven.zohodl.com/` |
 
 ---
 
@@ -216,7 +216,7 @@ update `state`, and the UI follows.
 
 ```gradle
 maven { url = "https://maven.zohodl.com/" }      // settings.gradle
-api 'com.zoho.assist:cobrowse:1.0.0'      // app/build.gradle
+api 'com.zoho.assist:cobrowse:1.0.1'      // app/build.gradle
 ```
 
 Some AndroidX libraries are pinned to the minimum versions the SDK expects (`// SDK floor`).
@@ -260,7 +260,7 @@ The SDK captures this Activity's own window.
 | `pauseSharing()` / `resumeSharing()` | `onStopShare()` / `onStartShare()` — the session stays open, frames stop |
 | `end()` | `onCustomerEndSession()` — not `onStopShare()`, which would leave the agent with a frozen view |
 | Session logs | `listSessionLogs`, `readSessionLog`, `shareLogs`, `downloadLogs`, `saveLogs`, `exportLogs`, `clearLogs` (all on `Dispatchers.IO`) |
-| `SessionCallbacks` | Drive `state` (`Idle` / `Connecting` / `Active`) and bump `redactionEpoch` when capture starts |
+| `SessionCallbacks` | Drive `state` (`Idle` / `Connecting` / `Active`) |
 
 `CobrowseController` is an `object`, so a session survives rotation and Activity recreation.
 `CobrowseSheet.kt` is the UI on top of it: the 6-character session-code field and the
@@ -287,11 +287,9 @@ rectangle in the captured frame before encoding, so the agent's copy never conta
 
 * `redactable()` is applied **unconditionally**. It is a no-op with no session; gating it on
   session state would let an already-composed screen stream unmasked.
-* `Redactable` keys its subtree on `CobrowseController.redactionEpoch`, which ticks whenever
-  capture starts or resumes. Regions report their bounds from `onGloballyPositioned`, which
-  only runs on a layout pass. Without the rebuild, a screen that was already laid out before
-  the session began (the account-details sheet, for example) never announced its regions
-  and only got masked after a scroll.
+* Masks registered before the session starts stay in force when it starts, so a screen
+  already laid out (the account-details sheet, for example) is masked from the first frame.
+  SDK `1.0.0` dropped them at `start()`; `1.0.1` keeps them, so no rebuild is needed.
 * `ValueRow` / `BankTextField` in `BankUi.kt` take a `sensitive` flag: the value is
   redacted and its label stays readable. A sensitive text field is masked only while it holds
   a value, so an empty field shows no bar.
@@ -308,13 +306,20 @@ View-level masking can't reach inside a document. The statement's sensitive valu
 
 1. The WebView's client is wrapped: `redactableWebViewClient(delegate)`
    (`CobrowseSession.INSTANCE.wrapWebViewClient`).
-2. The selector is registered: `start()` sets `.redact`, and the statement screen changes it
-   with `CobrowseController.setWebViewRedactedSelectors(…)`.
+2. The selector is registered: `BankApplication` sets `.redact` once at app start, and the
+   statement screen changes it with `CobrowseController.setWebViewRedactedSelectors(…)`. The
+   SDK keeps the selectors across sessions until they are replaced.
 
-The selector list is read when a page loads, so a change applies from the next load; the
-statement keys its WebViews on the mode to force one. It offers three modes: *Nothing
-hidden*, *Sensitive fields* (the selector), and *Whole page* (a native `Redactable` over the
-whole WebView, because the page could paint before injected CSS runs).
+A change to the selectors applies at once: the SDK re-masks pages that are already loaded, so
+the statement keeps its WebViews alive when the mode changes instead of reloading them. It
+offers three modes: *Nothing hidden*, *Sensitive fields* (the selector), and *Whole page* (a
+native `Redactable` over the whole WebView, because the page could paint before injected CSS
+runs).
+
+The statement also embeds a *Rewards card* page (a same-origin iframe) drawn at 1.5× with a
+CSS `transform`. Its card number carries the same `redact` class, and the SDK scales the mask
+with the frame so it lands on the field. That needs SDK `1.0.1`: `1.0.0` placed the mask at the
+frame's position but not its scale, so part of the number showed beside it.
 
 ### Where masking is applied
 
