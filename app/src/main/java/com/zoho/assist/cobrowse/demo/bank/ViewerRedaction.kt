@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -134,10 +133,6 @@ fun Redactable(
     // [masked] toggles only the modifier, never the tree: a different tree would
     // recreate [content], and a text field recreated on focus loses that focus,
     // so the customer could never type into it.
-    // Keyed on the epoch so a session starting rebuilds this subtree, re-running
-    // onAttach + onGloballyPositioned; otherwise a capture that began after
-    // layout never receives the region's bounds on a static screen.
-    key(CobrowseController.redactionEpoch) {
     Box(modifier.then(if (masked) Modifier.redactable() else Modifier)) {
         content()
         if (masked && LocalAgentView.current) {
@@ -147,7 +142,6 @@ fun Redactable(
                     .background(MaskSurface, RoundedCornerShape(4.dp)),
             )
         }
-    }
     }
 }
 

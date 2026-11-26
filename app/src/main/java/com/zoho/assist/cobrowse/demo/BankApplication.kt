@@ -16,6 +16,11 @@ class BankApplication : AssistCobrowseApplication() {
         // Process-scoped so the session survives Activity recreation.
         CobrowseSession.INSTANCE.setContext(this)
 
+        // Masks DOM nodes inside the statement WebView (needs
+        // redactableWebViewClient(), ViewerRedaction.kt). Set once: the SDK
+        // keeps it across sessions.
+        CobrowseController.setWebViewRedactedSelectors(REDACTED_CSS_SELECTOR)
+
         // Your widget code and the domain it was issued for (e.g. assist.zoho.in)
         // go here. Never commit a real widget code: this repo is public. A
         // production app fetches it from its backend after login instead, since

@@ -40,14 +40,6 @@ object CobrowseController : SessionCallbacks {
         private set
 
     /**
-     * Ticks every time capture starts. [Redactable] keys its subtree on this so
-     * regions re-register and report fresh bounds; a screen laid out before the
-     * session began would otherwise never re-announce them and stream unmasked.
-     */
-    var redactionEpoch: Int by mutableStateOf(0)
-        private set
-
-    /**
      * The widget code [start] authenticates with. Never shown to the customer.
      *
      * The demo sets it in [BankApplication]. A production app fetches it from
@@ -82,7 +74,7 @@ object CobrowseController : SessionCallbacks {
 
     /**
      * Replace the CSS selectors masked inside wrapped WebViews. Applies from the
-     * next page load; [start] re-registers the app default.
+     * next page load and stays in force across sessions until changed again.
      */
     fun setWebViewRedactedSelectors(vararg selectors: String) {
         CobrowseSession.INSTANCE.setWebViewRedactedSelectors(arrayOf(*selectors))
@@ -127,15 +119,11 @@ object CobrowseController : SessionCallbacks {
 
         state = State.Connecting
 
-        CobrowseSession.INSTANCE
-            .setCallbacks(this)
-            // The SDK streams on connect at its own quality and frame rate, and
-            // shares everything except what the app marks: sensitive values are
-            // withheld per field via Modifier.redactable().
-            // Masks DOM nodes inside the statement WebView. Requires
-            // redactableWebViewClient() (ViewerRedaction.kt). Set per start
-            // because the SDK clears it when a session closes.
-            .setWebViewRedactedSelectors(arrayOf(REDACTED_CSS_SELECTOR))
+        // The SDK streams on connect at its own quality and frame rate, and
+        // shares everything except what the app marks: sensitive values are
+        // withheld per field via Modifier.redactable(). WebView selectors set
+        // before start() stay in force across sessions (SDK 1.0.1+).
+        CobrowseSession.INSTANCE.setCallbacks(this)
 
         val config = CobrowseSession.CobrowseSessionConfig(
             sessionKey = key,
@@ -175,7 +163,6 @@ object CobrowseController : SessionCallbacks {
 
     /** Resume frame delivery after [pauseSharing]. */
     fun resumeSharing() {
-        redactionEpoch++
         CobrowseSession.INSTANCE.onStartShare()
         state = State.Active(sharing = true)
     }
@@ -232,12 +219,10 @@ object CobrowseController : SessionCallbacks {
     // ── SessionCallbacks ────────────────────────────────────────────────────
 
     override fun onSessionStarted() {
-        redactionEpoch++
         state = State.Active(sharing = false)
     }
 
     override fun onScreenShareStarted() {
-        redactionEpoch++
         state = State.Active(sharing = true)
     }
 

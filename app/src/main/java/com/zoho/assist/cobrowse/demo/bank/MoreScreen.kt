@@ -41,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.key
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -207,6 +206,18 @@ private const val STATEMENT_HTML =
         "<p><b>Account:</b> <span class='redact'>Everyday Checking &bull;&bull;&bull;&bull; 4421</span></p>" +
         "<p><b>Card:</b> <span class='redact'>4111 1111 1111 1111</span></p>" +
         "<p><b>Statement period:</b> 1 &ndash; 30 April</p>" +
+        // An embedded page (same-origin iframe) drawn at 1.5x with a CSS transform: the
+        // SDK has to scale the mask with the frame, not only move it (SDK 1.0.1+). The
+        // wrapper reserves the scaled height, since a transform does not affect layout.
+        "<p style='margin-bottom:4px'><b>Rewards card</b> (embedded page, shown at 1.5&times;)</p>" +
+        "<div style='height:96px'>" +
+        "<iframe title='Rewards card' style='width:200px;height:60px;border:1px solid #ccc;" +
+        "transform:scale(1.5);transform-origin:0 0' srcdoc=\"<style>" +
+        "body{font-family:sans-serif;font-size:13px;margin:8px}" +
+        ".redact{border-radius:3px;padding:0 3px}" +
+        "body.mask-fields .redact{background:#111;color:transparent}</style>" +
+        "<b>Card:</b> <span class='redact'>5500 0000 0000 0004</span>\"></iframe>" +
+        "</div>" +
         "<hr>" +
         "<table style='width:100%;border-collapse:collapse'>" +
         "<tr><th align='left'>Date</th><th align='left'>Payee</th><th align='right'>Amount</th></tr>" +
@@ -220,9 +231,17 @@ private const val STATEMENT_HTML =
         "<p><b>Tax ID on file:</b> <span class='redact'>123-45-6789</span></p>" +
         "</body></html>"
 
-/** Pushes a redaction class onto the document's `<body>`. */
+/**
+ * Pushes a redaction class onto the document's `<body>`, and onto the body of each
+ * embedded page, which does not inherit the parent's classes.
+ */
 private fun WebView.applyBodyClass(bodyClass: String) {
-    evaluateJavascript("document.body.className='$bodyClass';", null)
+    evaluateJavascript(
+        "(function(c){document.body.className=c;" +
+            "document.querySelectorAll('iframe').forEach(function(f){" +
+            "try{f.contentDocument.body.className=c}catch(e){}})})('$bodyClass');",
+        null,
+    )
 }
 
 @Composable
@@ -270,22 +289,16 @@ fun StatementScreen(modifier: Modifier = Modifier) {
         // The customer's own view, always unmasked locally. In WHOLE_PAGE the
         // native region over this WebView bars only the agent's copy.
         //
-        // Keyed on the mode because the SDK freezes the selector list into the
-        // script it injects on page load; rebuilding the WebView makes it
-        // re-inject with the current selectors.
-        key(mode) {
-            val statement = @Composable {
+        // The WebView stays alive across mode changes: the SDK re-masks a loaded
+        // page as soon as the selectors change, so there is no need to rebuild it
+        // (which flashed the page white). [Redactable]'s `masked` toggles only the
+        // modifier, so WHOLE_PAGE does not swap the tree either.
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            Redactable(masked = mode == StatementRedaction.WHOLE_PAGE) {
                 StatementWebView(
                     bodyClass = "",
                     modifier = Modifier.fillMaxWidth().fillMaxSize(),
                 )
-            }
-            Box(Modifier.fillMaxWidth().weight(1f)) {
-                if (mode == StatementRedaction.WHOLE_PAGE) {
-                    Redactable { statement() }
-                } else {
-                    statement()
-                }
             }
         }
 
@@ -315,12 +328,11 @@ fun StatementScreen(modifier: Modifier = Modifier) {
                 )
             }
             Box(Modifier.fillMaxSize()) {
-                key(mode) {
-                    StatementWebView(
-                        bodyClass = if (mode == StatementRedaction.FIELDS) "mask-fields" else "",
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
+                // Kept alive too; the new body class is applied in place.
+                StatementWebView(
+                    bodyClass = if (mode == StatementRedaction.FIELDS) "mask-fields" else "",
+                    modifier = Modifier.fillMaxSize(),
+                )
                 if (mode == StatementRedaction.WHOLE_PAGE) {
                     Box(Modifier.fillMaxSize().background(MaskSurface))
                 }
